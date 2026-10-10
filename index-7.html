@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Guérison">
+<meta name="theme-color" content="#A3416C">
+<link rel="apple-touch-icon" href="icon.png">
+<style>:root{color-scheme:light}html,body{margin:0}</style>
+<title>Programme de guérison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: une seule colonne mobile, bandeau collant avec avancement, sections par prière comme sur la fiche papier. */
+:root{
+  --font-display:'Lora',Georgia,'Times New Roman',serif;
+  --font-ui:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --bg:#FDF3F6;
+  --surface:#FFFFFF;
+  --tint:#FBE3EB;
+  --ink:#2E1822;
+  --muted:#7B5667;
+  --line:#EBCBD7;
+  --accent:#A5305D;
+  --on-accent:#FFFFFF;
+  --strip:#A3416C;
+  --formula:#8E1B48;
+  --fm-bg:#FDEEF3;
+  --warn-bg:#FFF1D9;
+  --warn-ink:#6A4300;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-display);font-size:1rem;line-height:1.5;margin:0}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:40rem;margin-inline:auto;padding-inline:16px}
+main.wrap{padding-block:8px 48px;display:flex;flex-direction:column;gap:20px}
+
+/* Bandeau collant */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .wrap{padding-block:10px 10px;display:flex;flex-direction:column;gap:8px}
+.bar1{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.bar1 h1{margin:0;font-size:1.1rem;font-weight:700;text-wrap:balance}
+.count{font-family:var(--font-ui);font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent);white-space:nowrap}
+.count small{font-weight:600;color:var(--muted)}
+.track{height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.fill{height:100%;width:0;background:var(--accent);transition:width .3s ease}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-block:2px;margin-inline:-16px;padding-inline:16px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;display:inline-flex;align-items:baseline;gap:6px;min-height:36px;padding:6px 12px;border:0;border-radius:18px;background:var(--tint);color:var(--ink);font-family:var(--font-ui);font-size:.85rem;font-weight:600;cursor:pointer}
+.chip i{font-style:normal;font-size:.75rem;font-variant-numeric:tabular-nums;color:var(--muted)}
+.chip[aria-current="true"]{background:var(--accent);color:var(--on-accent)}
+.chip[aria-current="true"] i{color:var(--on-accent);opacity:.85}
+
+/* Introduction */
+.intro{padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.intro .kicker{margin:0;font-family:var(--font-ui);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.intro h2{margin:0;font-size:1.5rem;line-height:1.2;text-wrap:balance}
+.intro .by{margin:0;color:var(--muted);font-style:italic}
+.intro .verse{margin:8px 0 0;padding:12px 14px;border-radius:10px;background:var(--tint);font-style:italic}
+.intro .verse span{display:block;margin-top:2px;font-style:normal;font-family:var(--font-ui);font-size:.78rem;color:var(--muted)}
+.today{margin:6px 0 0;font-family:var(--font-ui);font-weight:600;color:var(--accent)}
+
+/* Sections */
+.sec{scroll-margin-top:var(--hdr,120px);display:flex;flex-direction:column}
+.strip{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:10px 14px;border-radius:12px 12px 0 0;background:var(--strip);color:#fff}
+.strip h2{margin:0;font-size:1rem;font-weight:700}
+.strip .meta{font-family:var(--font-ui);font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.items{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px}
+.item{display:flex;gap:4px;padding:12px 14px 14px 4px;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.tick{flex:none;display:grid;place-items:start center;width:48px;padding-top:2px;cursor:pointer}
+.tick input{position:absolute;opacity:0;width:1px;height:1px}
+.box{width:28px;height:28px;border-radius:8px;border:2px solid var(--accent);background:var(--surface);display:grid;place-items:center;transition:background .15s}
+.box::after{content:"";width:6px;height:13px;border:solid var(--on-accent);border-width:0 3px 3px 0;transform:translateY(-1px) rotate(45deg) scale(0);transition:transform .15s}
+.tick input:checked + .box{background:var(--accent)}
+.tick input:checked + .box::after{transform:translateY(-1px) rotate(45deg) scale(1)}
+.tick input:focus-visible + .box{outline:3px solid var(--accent);outline-offset:2px}
+.body{min-width:0;flex:1;display:flex;flex-direction:column;gap:6px}
+.when{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-family:var(--font-ui);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pill{padding:1px 8px;border-radius:10px;background:var(--tint);color:var(--accent);letter-spacing:.04em}
+.act{margin:0;font-size:1.02rem;font-weight:600;line-height:1.35}
+.act label{cursor:pointer}
+.item.is-done .act{color:var(--muted)}
+.item.is-done .fm{opacity:.7}
+.txt{margin:0;color:var(--muted);font-size:.95rem}
+.call{margin:0;padding:10px 12px;border-radius:10px;background:var(--warn-bg);color:var(--warn-ink);font-size:.93rem}
+.call b{font-family:var(--font-ui);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase}
+.dalil{margin:0;display:flex;flex-wrap:wrap;gap:2px 14px;font-family:var(--font-ui);font-size:.76rem;color:var(--muted)}
+.dalil div{display:flex;gap:4px}
+.dalil dt{font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:.68rem;padding-top:1px}
+.dalil dd{margin:0;font-variant-numeric:tabular-nums}
+
+/* Formules */
+details.more{border-radius:10px}
+details.more > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;min-height:40px;font-family:var(--font-ui);font-size:.88rem;font-weight:700;color:var(--accent)}
+details.more > summary::-webkit-details-marker{display:none}
+details.more > summary::before{content:"";width:7px;height:7px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(-45deg);transition:transform .15s}
+details.more[open] > summary::before{transform:rotate(45deg)}
+.inner{display:flex;flex-direction:column;gap:8px;padding-bottom:6px}
+.fm{padding:10px 12px;border-radius:10px;background:var(--fm-bg);display:flex;flex-direction:column;gap:6px}
+.fm.line{flex-direction:row;align-items:baseline;justify-content:space-between;gap:12px}
+.fm .tr{margin:0;font-weight:700;color:var(--formula);overflow-wrap:anywhere}
+.fm .sens{margin:0;font-size:.88rem;font-style:italic;color:var(--muted)}
+.fm .sens b{font-style:normal}
+.fm .n{flex:none;font-family:var(--font-ui);font-weight:700;font-size:.82rem;color:var(--accent);font-variant-numeric:tabular-nums}
+.step{margin:0;font-size:.93rem}
+.quote{margin:0;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;font-size:.88rem;font-style:italic;color:var(--muted)}
+
+/* Chrono */
+.timer{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.timer button{min-height:44px;padding:8px 18px;border:0;border-radius:22px;background:var(--accent);color:var(--on-accent);font-family:var(--font-ui);font-weight:700;cursor:pointer}
+.timer output{font-family:var(--font-ui);font-size:1.4rem;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* Au fil du jour */
+.ref{display:flex;flex-direction:column;gap:8px}
+.ref .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 14px}
+.ref .card > summary{min-height:48px;font-size:1rem}
+.ref .card .inner{padding-bottom:14px}
+.ref a{color:var(--accent)}
+
+/* Pied de page */
+.foot{display:flex;flex-direction:column;gap:12px}
+.note{margin:0;padding:12px 14px;border-radius:10px;background:var(--tint);font-size:.93rem}
+.small{margin:0;font-family:var(--font-ui);font-size:.76rem;color:var(--muted)}
+.reset{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.reset button{min-height:44px;padding:8px 16px;border-radius:22px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-family:var(--font-ui);font-weight:700;cursor:pointer}
+.reset button.go{background:var(--accent);color:var(--on-accent)}
+.reset span{font-family:var(--font-ui);font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top" id="top">
+  <div class="wrap">
+    <div class="bar1">
+      <h1>Programme de guérison</h1>
+      <div class="count" id="total" aria-live="polite">0<small> / 28</small></div>
+    </div>
+    <div class="track" role="progressbar" aria-label="Avancement du jour" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="pbar"><div class="fill" id="pfill"></div></div>
+    <nav class="chips" id="chips" aria-label="Aller à une section"></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="intro">
+    <p class="kicker">Fiche de guérison selon la sunnah du Prophète ﷺ</p>
+    <h2>Īnās bint Nūr Ad-Din</h2>
+    <p class="verse">« Invoquez-Moi, Je vous exaucerai. »<span>Coran 40:60</span></p>
+    <p class="today" id="today"></p>
+  </section>
+
+  <div id="prog" style="display:flex;flex-direction:column;gap:20px"></div>
+
+  <section class="sec" id="jour" aria-labelledby="jour-h">
+    <div class="strip"><h2 id="jour-h">Au fil du jour</h2><span class="meta">Invocations du quotidien</span></div>
+    <div class="items"><div class="ref" id="ref" style="padding:12px 14px 14px"></div></div>
+  </section>
+
+  <footer class="foot">
+    <p class="note"><b>Note.</b> Ne laisse pas la quantité te submerger : prends ce programme comme un idéal vers lequel tendre. Si la fatigue (physique ou liée à l'attente des résultats) se fait sentir, concentre-toi sur les prières obligatoires, l'invocation de guérison en prosternation et le dhikr silencieux avec le cœur. Allah regarde ton intention.</p>
+    <p class="small"><b>Les 12 Rawātib en un coup d'œil :</b> Fajr 2 · Dhuhr 4 avant + 2 après · Maghrib 2 après · Isha 2 après.</p>
+    <p class="small">Numéros : Bukhari et Muslim selon la numérotation courante (sunnah.com) ; Abu Dawud, Tirmidhi et Ibn Majah selon sunnah.com. Pour toute vérification, croiser avec une édition de confiance.</p>
+    <div class="reset" id="reset"></div>
+  </footer>
+</main>
+
+<script>
+(function(){
+  var pad=function(n){return String(n).padStart(2,'0')};
+  var F=function(tr,sens){return '<div class="fm"><p class="tr">'+tr+'</p>'+(sens?'<p class="sens"><b>Sens :</b> '+sens+'</p>':'')+'</div>'};
+  var R=function(tr,n){return '<div class="fm line"><p class="tr">'+tr+'</p>'+(n?'<span class="n">×'+n+'</span>':'')+'</div>'};
+  var P=function(t){return '<p class="step">'+t+'</p>'};
+  var D=function(list){return list};
+
+  var KURSI='Ayat al-Kursī';
+  var DALIL_POST=[['Formule','Muslim 591'],[KURSI,'An-Nasa\'i (ʿAmal al-Yawm wa-l-Layla 100), Sahih al-Jami\' 6464']];
+  var DALIL_RAWATIB=[['','Bukhari 1172 · Muslim 729 · Tirmidhi 415']];
+  var POST=F('Astaghfiroullâh (3 fois). Allâhoumma Anta s-Salâm, wa minka s-salâm, tabârakta yâ Dhal-jalâli wal-ikrâm.','Je demande pardon à Allah (3 fois). Ô Allah, Tu es la Paix et de Toi vient la paix ; béni sois-Tu, ô Détenteur de la Majesté et de la Générosité.')
+    +P('Puis réciter Ayat al-Kursī (Coran 2:255), puis Qul Huwa Lahou / Falaq / Nas.');
+  var OBLIG=[['','Obligatoire']];
+
+  var FAJR_LIST=
+    R('Raditou Billahi Rabban Wa Bil Islami Dinnan Wa Bi Mouhammadin Nabiyyan',1)
+    +R('Sobhanalahil \'Adhim Wa Bihamdih',100)
+    +R('La Ilaha Illa Allah Wahdahou La Charika Lah, Lahoul Moulk Wa Lahoul Hamd Youhyi Wa Youmit Biyadihil Kheyr Wa Houwa \'Ala Koulli Chay In Qadir',100)
+    +R('<span>Les 5 paroles :</span><br>La Ilaha Illa Allah Wallahou Akbar<br>La Ilaha Illa Allahou Wahdah<br>La Ilaha Illa Allah La Charika Lah<br>La Ilaha Illa Allah Lahoul Moulk Wa Lahou Al Hamd<br>La Ilaha Illa Allah Wa La Hawla Wa La Qouwata Illa Billah',1)
+    +R('Hasbiya Allahou La Ilaha Illa Houwa \'Alayhi Tawakaltou Wa Houwa Raboul \'Archil \'Adhim',7)
+    +R('Bismillah Alladhi La Yadourrou Ma\'a Smihi Chay oun Fil Ardi Wa La Fis Sama Wa Houwas Sami\'oul \'Alim',3)
+    +R('Allahumma Innî As\'aluka \'ilman nâfi\'an wa rizqan tayyiban wa \'amalan mutaqabbalan',1)
+    +R('Allâhumma bika asbahnâ, wa bika amsaynâ, wa bika nahyâ, wa bika namût, wa ilayka-n-nushûr',1)
+    +R('Allahoumma Inni Ass alouka Al \'Afiya<br>Allahoumma Inni A\'oudhou Bika Minal Ham Wal Hazan Wal \'Ajz Wal Kasal Wal Joubn Wal Boukhl Wa Dala\'i Dain Wa Ghalabati Rijal')
+    +R('Allah! Allahu Rabbi la ushriku bihi shay\'an');
+
+  var ASR_LIST=
+    R('Sobhanalahil \'Adhim Wa Bihamdih',100)
+    +R('La ilaha illa Allah wahdahou la charika lah, lahoul moulk wa lahoul hamd, wa houwa \'ala kouli chay in qadir',100)
+    +R('Hasbiya Allahou La Ilaha Illa Houwa \'Alayhi Tawakaltou Wa Houwa Raboul \'Archil \'Adhim',7)
+    +R('La Ilaha Illa Allah Wahdahou La Charika Lah Lahoul Moulk Wa Lahoul Hamd Bi Yadihil Kheyr Wa Houwa \'Ala Koulli Chay\'in Qadir',10)
+    +R('Bismillah Alladhi La Yadourrou Ma\'a Smihi Chay oun Fil Ardi Wa La Fis Sama Wa Houwas Sami\'oul \'Alim',3);
+
+  var SECTIONS=[
+    {id:'qiyam',chip:'Qiyām',title:'Qiyām al-Layl',meta:'30 min avant Fajr',items:[
+      {id:'q1',when:'Au réveil',title:'Dire l\'invocation du réveil',more:[['Formule et sens',F('Al-hamdou lillâhi lladhî ahyânâ ba\'da mâ amâtanâ wa ilayhi n-noushoûr.','Louange à Allah qui nous a redonné la vie après nous avoir fait mourir, et c\'est vers Lui que sera la résurrection.')]],dalil:[['Formule','Bukhari 6312']]},
+      {id:'q2',when:'Jusqu\'au Fajr',title:'Prier 11 rak\'ats : 5 fois 2 unités, puis 1 unité de Witr',text:'En prosternation, multiplier les pleurs et les demandes de guérison.',more:[['Invocation de guérison',F('Allâhoumma Rabba n-nâs, adhhibi l-ba\'s, wachfi Anta ch-Châfî, lâ chifâ\'a illâ chifâ\'ouk, chifâ\'an lâ youghâdirou saqamâ.','Ô Allah, Seigneur des hommes, fais disparaître le mal et guéris : Tu es le Guérisseur. Il n\'y a de guérison que la Tienne, une guérison qui ne laisse aucune maladie.')]],dalil:[['11 rak\'ats','Bukhari 1147, Muslim 738'],['2 par 2','Bukhari 990, Muslim 749'],['Prosternation','Muslim 482'],['Guérison','Bukhari 5675, Muslim 2191']]},
+      {id:'q3',when:'S\'il reste du temps avant l\'Adhan',title:'L\'Istighfar : répéter (par ex. 100 fois) en attendant l\'heure du Fajr',more:[['Formule et sens',F('Astaghfiroullâh.','Je demande pardon à Allah.')]],dalil:[['','Coran 51:18']]}
+    ]},
+    {id:'fajr',chip:'Fajr',title:'Au Adhan du Fajr (Aube)',meta:'',items:[
+      {id:'f1',when:'Avant de commencer · Sunnah du Fajr',title:'2 rak\'ats Rawātib avant l\'obligatoire',text:'Réciter Al-Kāfirūn puis Al-Ikhlās si possible.',call:'<b>Attention</b><br>Moment d\'exaucement élevé : invoque intensément pour ta guérison (invocation libre, dans ta langue, mais en arabe c\'est beaucoup plus apprécié d\'Allah).',dalil:[['Vertu','Muslim 725'],['Sourates','Muslim 726'],['Les 12 Rawātib','Muslim 728, Tirmidhi 415']]},
+      {id:'f2',when:'Fajr',pill:'Obligatoire',title:'Prière obligatoire du Fajr (2 rak\'ats)'},
+      {id:'f3',when:'Ne plus bouger · rester en position de fin de prière',title:'Dire les invocations, puis Ayat al-Kursī, puis les dhikr du matin',more:[['Invocations et Ayat al-Kursī',POST+'<p class="quote">Le Messager d\'Allah ﷺ a dit : « Les anges ne cessent d\'invoquer Allah en faveur de l\'un d\'entre vous qui demeure dans son lieu de prière et tant qu\'il conserve ses ablutions ; ils s\'adressent [à Allah] en ces termes : « Seigneur, pardonne-lui ! Seigneur, fais-lui miséricorde ! » [Bukhari, Riyad as-Salihin n°1062, authentifié par sheikh al-Albani]</p>'],['Les dhikr à la suite',FAJR_LIST]],dalil:DALIL_POST},
+      {id:'f4',when:'Jusqu\'à Chourouk · lever du soleil',title:'Lire le Coran et continuer les adhkār du matin',text:'Invocations et rappels d\'Allah.',dalil:[['','Muslim 670 · Abu Dawud 3667']]}
+    ]},
+    {id:'dhuha',chip:'Dhuha',title:'Dhuha',meta:'avant Dhohr',items:[
+      {id:'h1',when:'20 minutes avant Dhohr',title:'Prière du Dhuha : 2, 4, 6 ou 8 rak\'ats (par groupes de 2)',text:'À faire quand le soleil est haut et que la terre est bien chaude. C\'est l\'aumône due pour chaque articulation du corps.',call:'<b>Plan B</b><br>Si tu ne peux pas la faire à son meilleur moment (20 à 10 min avant Dhohr), fais-la avant, dans la matinée, mais toujours après le Chourouk (07:59), de préférence quand le soleil est bien levé.',dalil:[['Meilleur moment','Muslim 748'],['Aumône des articulations','Muslim 720'],['4 rak\'ats et plus','Muslim 719'],['Jusqu\'à 8','Bukhari 1176'],['Temps interdits','Muslim 831']]}
+    ]},
+    {id:'dhohr',chip:'Dhohr',title:'Dhohr',meta:'',items:[
+      {id:'d1',when:'Avant de commencer Dhohr',title:'4 rak\'ats Rawātib (2 unités, puis 2 unités)',dalil:[['','Bukhari 1182 · Muslim 730 · Tirmidhi 415']]},
+      {id:'d2',when:'Dhohr',pill:'Obligatoire',title:'Prière obligatoire de Dhohr (4 rak\'ats)'},
+      {id:'d3',when:'Ne plus bouger · rester en position de fin de prière',title:'Dire les invocations, puis Ayat al-Kursī, puis Qul Huwa Lahou / Falaq / Nas',more:[['Invocations',POST]],dalil:DALIL_POST},
+      {id:'d4',when:'Après Dhohr',title:'2 rak\'ats Rawātib',dalil:DALIL_RAWATIB}
+    ]},
+    {id:'asr',chip:'Asr',title:'Asr',meta:'',items:[
+      {id:'a1',when:'Asr',pill:'Obligatoire',title:'Prière obligatoire de l\'Asr (4 rak\'ats)'},
+      {id:'a2',when:'Ne plus bouger · adhkār du soir',title:'Les adhkār du soir, de l\'entrée de l\'Asr jusqu\'au coucher du soleil (Maghrib, 19:20)',more:[['Les dhikr du soir',ASR_LIST]],dalil:[['','Coran 20:130 · Coran 50:39 · Abu Dawud 3667']]},
+      {id:'a3',when:'Après Asr',title:'Une petite Sadaqah (aumône) de guérison, même modeste',text:'La faible quantité dans la continuité vaut mieux que la grande quantité dans la discontinuité.',dalil:[['','Bukhari 1417 · Al-Bayhaqi, Sahih al-Jami\' 3358']]}
+    ]},
+    {id:'maghrib',chip:'Maghrib',title:'Maghrib',meta:'soir',items:[
+      {id:'m1',when:'Maghrib',pill:'Obligatoire',title:'Prière obligatoire du Maghrib (3 rak\'ats)'},
+      {id:'m2',when:'Ne plus bouger · rester en position de fin de prière',title:'Dire les invocations, puis Ayat al-Kursī, puis Qul Huwa Lahou / Falaq / Nas',more:[['Invocations',POST+R('La Ilaha Illa Allah Wahdahou La Charika Lah Lahoul Moulk Wa Lahoul Hamd Youhyi Wa Youmit Wa Houwa \'Ala Koulli Chay\'in Qadir',10)]],dalil:DALIL_POST},
+      {id:'m3',when:'Après Maghrib',title:'2 rak\'ats Rawātib',dalil:DALIL_RAWATIB}
+    ]},
+    {id:'isha',chip:'Isha',title:'Isha',meta:'',items:[
+      {id:'i1',when:'Isha',pill:'Obligatoire',title:'Prière obligatoire de l\'Isha (4 rak\'ats)'},
+      {id:'i2',when:'Ne plus bouger · rester en position de fin de prière',title:'Dire les invocations, puis Ayat al-Kursī, puis Qul Huwa Lahou / Falaq / Nas',more:[['Invocations',POST]],dalil:DALIL_POST},
+      {id:'i3',when:'Après Isha',title:'2 rak\'ats Rawātib',dalil:DALIL_RAWATIB}
+    ]},
+    {id:'coucher',chip:'Coucher',title:'Le coucher : la ruqyah nocturne',meta:'≈ 22:00',items:[
+      {id:'c1',when:'Clôture de la journée',title:'Roqya sur de l\'eau : réciter Al-Fatiha pendant 5 minutes au minimum',text:'Réciter Al-Fatiha sur de l\'eau, en postillonant et soufflant, avec l\'intention de guérison de la maladie avec cette eau, bi idni Lah. Sommeil récompensé avec cette intention, pour être fort au Qiyām al-Layl.',timer:true},
+      {id:'c2',when:'Ne pas oublier',title:'Lire la sourate Al-Mulk (la Royauté) avant de dormir',dalil:[['','Tirmidhi 2891 · Tirmidhi 2892']]},
+      {id:'c3',when:'Étape 1 · Les ablutions',title:'Faire ses ablutions (Wudu) avant de se mettre au lit',dalil:[['','Bukhari 247 · Muslim 2710']]},
+      {id:'c4',when:'Étape 2 · Souffler et réciter',title:'Rassembler les deux mains, y souffler très légèrement et réciter Al-Ikhlās, Al-Falaq et An-Nās',dalil:[['','Bukhari 5017']]},
+      {id:'c5',when:'Étape 3 · Essuyer le corps',title:'Passer les mains sur le visage, la tête et tout ce qu\'on peut atteindre du corps (3 fois)',dalil:[['','Bukhari 5017']]},
+      {id:'c6',when:'Étape 4 · Protéger sa nuit',title:'Réciter Ayat al-Kursī (Coran 2:255) et les deux derniers versets de la sourate Al-Baqarah (2:285-286)',dalil:[[KURSI,'Bukhari 5010'],['2 derniers versets','Bukhari 5009, Muslim 807']]},
+      {id:'c7',when:'Étape 5 · Côté droit',title:'Se placer sur le côté droit et dire :',more:[['Formule et sens',F('Bismika Allâhoumma amoûtou wa ahyâ.','En Ton nom, ô Allah, je meurs et je vis.')]],dalil:[['Formule','Bukhari 6312'],['Côté droit','Bukhari 247']]}
+    ]}
+  ];
+
+  var REF=[
+    {t:'Sayyid al-Istighfār, la meilleure formule d\'imploration de pardon',html:
+      '<p class="step">D\'après Shaddad Ibn Aws (qu\'Allah l\'agrée), le Messager d\'Allah ﷺ a dit : « La meilleure formule d\'imploration de pardon consiste à ce que le serviteur dise : »</p>'
+      +F('Allâhumma anta Rabbî lâ ilâha illâ Anta,<br>Khalaqtanî wa anâ \'abduka,<br>Wa anâ \'alâ \'ahdika wa wa\'dika mastata\'tu.<br>A\'ûdhu bika min sharri mâ sana\'tu,<br>Abû\'u laka bi ni\'matika \'alayya, wa abû\'u bi dhanbî<br>Fa ghfir lî fa innahu lâ yaghfiru-dh-dhunûba illâ Anta.','Mon Dieu, Tu es mon Seigneur, il n\'y a de dieu que Toi. Tu m\'as créé, je suis Ton serviteur et je demeurerai attaché à Ton pacte et à Ta promesse autant que je le pourrai. Je Te demande de me préserver des méfaits que j\'ai commis. Je reconnais les bienfaits dont tu m\'as gratifié, et je reconnais mes péchés. Aussi pardonne-moi car nul autre que toi ne pardonne les péchés !')
+      +'<p class="quote">Celui qui fait cette invocation, en étant convaincu, dans la journée et meurt dans la même journée, avant le soir, fera partie des gens du Paradis, et celui qui l\'a dite de nuit, en en étant convaincu, et meurt avant l\'arrivée du matin fera partie des gens du Paradis.</p>'
+      +'<p class="small">Rapporté par Boukhari dans son Sahih (hadith n°6323), <a href="https://sunnah.com/bukhari/80/20" target="_blank" rel="noopener">sunnah.com/bukhari/80/20</a>. Hadith authentique (Sahîh).</p>'},
+    {t:'Entrée aux toilettes',html:F('Bismillâh. Allâhoumma innî a\'oûdhou bika mina l-khoubthi wa l-khabâ\'ith.','Au nom d\'Allah. Ô Allah, je cherche refuge auprès de Toi contre les démons mâles et femelles.')+'<p class="small">Bukhari 142 · Muslim 375</p>'},
+    {t:'Sortie des toilettes',html:F('Ghoufrânak.','Ton pardon, ô Allah.')+'<p class="small">Abu Dawud 30 · Tirmidhi 7</p>'},
+    {t:'En s\'habillant',html:F('Al-hamdou lillâhi lladhî kasânî hâdhâ wa razaqanîhi min ghayri hawlin minnî wa lâ qouwwa.','Louange à Allah qui m\'a vêtu de ceci et me l\'a accordé, sans force ni puissance de ma part.')+'<p class="small">Abu Dawud 4023</p>'},
+    {t:'En sortant de la maison',html:F('Bismillâh, tawakkaltou \'alâ llâh, wa lâ hawla wa lâ qouwwata illâ billâh.','Au nom d\'Allah, je place ma confiance en Allah ; il n\'y a de force ni de puissance qu\'en Allah.')+'<p class="small">Abu Dawud 5095 · Tirmidhi 3426</p>'},
+    {t:'Avant de manger',html:F('Bismillâh.','Au nom d\'Allah.')+P('<b>En cas d\'oubli au début :</b>')+F('Bismillâhi fî awwalihî wa âkhirih.','Au nom d\'Allah, au début et à la fin.')+'<p class="small">Bukhari 5376 · Muslim 2022 · Oubli : Abu Dawud 3767, Tirmidhi 1858</p>'},
+    {t:'Après avoir mangé',html:F('Al-hamdou lillâhi lladhî at\'amanî hâdhâ wa razaqanîhi min ghayri hawlin minnî wa lâ qouwwa.','Louange à Allah qui m\'a nourri de ceci et me l\'a accordé, sans force ni puissance de ma part.')+'<p class="small">Abu Dawud 4023 · Ibn Majah 3285</p>'},
+    {t:'En éternuant',html:P('<b>Tu dis :</b>')+F('Al-hamdou lillâh.','Louange à Allah.')+P('<b>L\'entourage répond :</b>')+F('Yarhamoukallâh.','Qu\'Allah te fasse miséricorde.')+P('<b>Tu réponds :</b>')+F('Yahdîkoumoullâhou wa youslihou bâlakoum.','Qu\'Allah vous guide et améliore votre état.')+'<p class="small">Bukhari 6224</p>'},
+    {t:'En ressentant une douleur',html:P('Poser la main sur la zone douloureuse et dire :')+P('<b>3 fois</b>')+F('Bismillâh.','Au nom d\'Allah.')+P('<b>Puis 7 fois</b>')+F('A\'oûdhou bi-\'izzati llâhi wa qoudratihî min charri mâ ajidou wa ouhâdhir.','Je me réfugie dans la puissance et la force d\'Allah contre le mal que je ressens et que je crains.')+'<p class="small">Muslim 2202</p>'}
+  ];
+
+  /* ---------- Rendu ---------- */
+  var esc=function(s){return String(s)};
+  var dalilHtml=function(list){
+    if(!list||!list.length)return '';
+    return '<dl class="dalil">'+list.map(function(p){return '<div>'+(p[0]?'<dt>'+p[0]+'</dt>':'<dt>Dalil</dt>')+'<dd>'+p[1]+'</dd></div>'}).join('')+'</dl>';
+  };
+  var itemHtml=function(it){
+    var h='<li class="item" data-id="'+it.id+'">';
+    h+='<label class="tick"><input type="checkbox" id="c-'+it.id+'" data-id="'+it.id+'"><span class="box"></span><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Fait</span></label>';
+    h+='<div class="body"><p class="when"><span>'+it.when+'</span>'+(it.pill?'<span class="pill">'+it.pill+'</span>':'')+'</p>';
+    h+='<h3 class="act"><label for="c-'+it.id+'">'+it.title+'</label></h3>';
+    if(it.text)h+='<p class="txt">'+it.text+'</p>';
+    if(it.call)h+='<p class="call">'+it.call+'</p>';
+    if(it.timer)h+='<div class="timer"><button type="button" id="tbtn" aria-pressed="false">Lancer le chrono</button><output id="tout" aria-label="Temps restant">05:00</output></div>';
+    (it.more||[]).forEach(function(m){h+='<details class="more"><summary>'+m[0]+'</summary><div class="inner">'+m[1]+'</div></details>'});
+    h+=dalilHtml(it.dalil);
+    h+='</div></li>';
+    return h;
+  };
+
+  var prog=document.getElementById('prog');
+  var chips=document.getElementById('chips');
+  var allIds=[];
+  prog.innerHTML=SECTIONS.map(function(s){
+    s.items.forEach(function(it){allIds.push(it.id)});
+    return '<section class="sec" id="s-'+s.id+'" data-sec="'+s.id+'" aria-labelledby="h-'+s.id+'"><div class="strip"><h2 id="h-'+s.id+'">'+s.title+(s.meta?' <span style="font-weight:400;opacity:.9">· '+s.meta+'</span>':'')+'</h2><span class="meta" data-meta="'+s.id+'"></span></div><ol class="items">'+s.items.map(itemHtml).join('')+'</ol></section>';
+  }).join('');
+  chips.innerHTML=SECTIONS.map(function(s){return '<button type="button" class="chip" data-go="s-'+s.id+'"><span>'+s.chip+'</span><i data-chip="'+s.id+'">0/'+s.items.length+'</i></button>'}).join('')
+    +'<button type="button" class="chip" data-go="jour"><span>Au fil du jour</span></button>';
+  document.getElementById('ref').innerHTML=REF.map(function(r){return '<details class="more card"><summary>'+r.t+'</summary><div class="inner">'+r.html+'</div></details>'}).join('');
+  document.getElementById('total').innerHTML='0<small> / '+allIds.length+'</small>';
+
+  /* ---------- État ---------- */
+  var LS='pg-guerison:';
+  var dateKey=function(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+  var lsGet=function(k){try{return JSON.parse(localStorage.getItem(LS+k))}catch(e){return null}};
+  var lsSet=function(k,v){try{localStorage.setItem(LS+k,JSON.stringify(v))}catch(e){}};
+  var toMap=function(arr){var m={};(Array.isArray(arr)?arr:[]).forEach(function(k){if(allIds.indexOf(k)>-1)m[k]=true});return m};
+  var loadDay=function(k){var s=lsGet(k);return s&&s.done?{date:k,done:toMap(Object.keys(s.done)),at:s.at||0}:{date:k,done:{},at:0}};
+  var state=loadDay(dateKey());
+
+  var fmtDay=function(){var t=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});return t.charAt(0).toUpperCase()+t.slice(1)};
+  document.getElementById('today').textContent=fmtDay();
+
+  function applyState(){
+    var total=0;
+    SECTIONS.forEach(function(s){
+      var n=0;
+      s.items.forEach(function(it){
+        var on=!!state.done[it.id];
+        var li=prog.querySelector('li[data-id="'+it.id+'"]');
+        var cb=document.getElementById('c-'+it.id);
+        if(cb&&cb.checked!==on)cb.checked=on;
+        if(li)li.classList.toggle('is-done',on);
+        if(on){n++;total++}
+      });
+      var meta=prog.querySelector('[data-meta="'+s.id+'"]');
+      if(meta)meta.textContent=n===s.items.length?'Terminé · '+n+'/'+s.items.length:n+'/'+s.items.length;
+      var chip=chips.querySelector('[data-chip="'+s.id+'"]');
+      if(chip)chip.textContent=n+'/'+s.items.length;
+    });
+    document.getElementById('total').innerHTML=total+'<small> / '+allIds.length+'</small>';
+    var pct=Math.round(total/allIds.length*100);
+    document.getElementById('pfill').style.width=pct+'%';
+    document.getElementById('pbar').setAttribute('aria-valuenow',String(pct));
+  }
+
+  /* ---------- Synchronisation (optionnelle) ---------- */
+  var db=null,uid=null,unsub=null,writing=false,dirty=false,timer=null;
+  var docRef=function(){return db.collection('data/users/'+uid).doc(state.date)};
+  function subscribe(){
+    if(!db)return;
+    if(unsub){try{unsub()}catch(e){}unsub=null}
+    var key=state.date;
+    try{
+      unsub=docRef().onSnapshot(function(snap){
+        if(key!==state.date||snap.metadata.hasPendingWrites)return;
+        var data=snap.exists?snap.data():null;
+        var remoteAt=data&&typeof data.at==='number'?data.at:0;
+        if(data&&remoteAt>state.at){state.done=toMap(data.done);state.at=remoteAt;lsSet(state.date,state);applyState()}
+        else if(remoteAt<state.at){schedulePush()}
+      },function(){});
+    }catch(e){}
+  }
+  function schedulePush(){if(!db)return;clearTimeout(timer);timer=setTimeout(push,500)}
+  async function push(){
+    if(!db)return;
+    if(writing){dirty=true;return}
+    writing=true;
+    try{await docRef().set({date:state.date,at:state.at,done:Object.keys(state.done)})}catch(e){}
+    writing=false;
+    if(dirty){dirty=false;schedulePush()}
+  }
+  async function initCloud(){
+    try{
+      if(!window.claude||!window.claude.use)return;
+      var d=await window.claude.use('db');
+      var u=await window.claude.use('user');
+      if(!d||!u)return;
+      var id=await u.id();
+      if(!id)return;
+      db=d;uid=id;subscribe();
+    }catch(e){}
+  }
+
+  function setDone(id,v){
+    if(v)state.done[id]=true;else delete state.done[id];
+    state.at=Date.now();
+    lsSet(state.date,state);
+    applyState();
+    schedulePush();
+  }
+  function resetDay(){
+    state.done={};state.at=Date.now();
+    lsSet(state.date,state);applyState();schedulePush();
+  }
+  function checkDate(){
+    var k=dateKey();
+    if(k===state.date)return;
+    state=loadDay(k);
+    document.getElementById('today').textContent=fmtDay();
+    applyState();subscribe();
+  }
+
+  prog.addEventListener('change',function(e){
+    var t=e.target;
+    if(t&&t.matches&&t.matches('input[type="checkbox"]'))setDone(t.getAttribute('data-id'),t.checked);
+  });
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)checkDate()});
+  window.addEventListener('focus',checkDate);
+  setInterval(checkDate,60000);
+
+  /* ---------- Réinitialisation ---------- */
+  var resetBox=document.getElementById('reset');
+  function drawReset(confirming){
+    resetBox.innerHTML=confirming
+      ?'<span>Décocher toutes les cases du jour ?</span><button type="button" class="go" id="r-yes">Oui, tout décocher</button><button type="button" id="r-no">Annuler</button>'
+      :'<button type="button" id="r-ask">Remettre la journée à zéro</button><span>La remise à zéro se fait aussi toute seule à minuit.</span>';
+    var y=document.getElementById('r-yes'),n=document.getElementById('r-no'),a=document.getElementById('r-ask');
+    if(y)y.onclick=function(){resetDay();drawReset(false)};
+    if(n)n.onclick=function(){drawReset(false)};
+    if(a)a.onclick=function(){drawReset(true)};
+  }
+  drawReset(false);
+
+  /* ---------- Navigation ---------- */
+  var hdr=document.getElementById('top');
+  function setHdr(){document.documentElement.style.setProperty('--hdr',(hdr.offsetHeight+12)+'px')}
+  setHdr();
+  if(window.ResizeObserver)new ResizeObserver(setHdr).observe(hdr);
+  chips.addEventListener('click',function(e){
+    var b=e.target.closest&&e.target.closest('[data-go]');
+    if(!b)return;
+    var el=document.getElementById(b.getAttribute('data-go'));
+    if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  var chipFor=function(secId){return chips.querySelector('[data-go="'+secId+'"]')};
+  function setActive(secId){
+    var btns=chips.querySelectorAll('.chip');
+    btns.forEach(function(c){c.removeAttribute('aria-current')});
+    var c=chipFor(secId);
+    if(c){
+      c.setAttribute('aria-current','true');
+      var left=c.offsetLeft-(chips.clientWidth-c.offsetWidth)/2;
+      chips.scrollTo({left:left,behavior:'smooth'});
+    }
+  }
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){if(en.isIntersecting)setActive(en.target.id)});
+    },{rootMargin:'-25% 0px -65% 0px'});
+    document.querySelectorAll('.sec').forEach(function(s){io.observe(s)});
+  }
+
+  /* ---------- Chrono 5 min ---------- */
+  (function(){
+    var btn=document.getElementById('tbtn'),out=document.getElementById('tout');
+    if(!btn||!out)return;
+    var total=300000,end=0,iv=null,wl=null;
+    var fmt=function(ms){var s=Math.max(0,Math.ceil(ms/1000));return pad(Math.floor(s/60))+':'+pad(s%60)};
+    function stop(label){
+      clearInterval(iv);iv=null;end=0;
+      btn.textContent=label;btn.setAttribute('aria-pressed','false');
+      try{if(wl)wl.release()}catch(e){}
+      wl=null;
+    }
+    btn.addEventListener('click',async function(){
+      if(iv){stop('Lancer le chrono');out.textContent='05:00';return}
+      end=Date.now()+total;
+      btn.textContent='Arrêter';btn.setAttribute('aria-pressed','true');
+      out.textContent=fmt(total);
+      iv=setInterval(function(){
+        var left=end-Date.now();
+        out.textContent=fmt(left);
+        if(left<=0){stop('Relancer le chrono');out.textContent='00:00 · terminé'}
+      },250);
+      try{if(navigator.wakeLock)wl=await navigator.wakeLock.request('screen')}catch(e){}
+    });
+  })();
+
+  applyState();
+  setActive('s-qiyam');
+  initCloud();
+})();
+</script>
+
+</body>
+</html>
